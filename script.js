@@ -145,7 +145,7 @@ btnAdd.addEventListener("click", () => {
     clearData();
   }
 });
-// validation
+// General validation
 function CheckValue(val, varName, msg) {
   if (val === "") {
     varName.classList.add("shown");
@@ -209,6 +209,7 @@ function fetchData() {
   });
 }
 fetchData();
+
 function renderListValue(obj, index) {
   let listContent = document.createElement("li");
   const indexValue = index + 1 || 1;
