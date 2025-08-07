@@ -22,31 +22,17 @@ let profitValue = 0;
 
 function calculation() {
   incomeValue = transactions
-    .filter((val) => val?.nature === "1")
-    .reduce((acc, cv) => (acc += parseFloat(cv.value)), 0);
+    .filter((val) => val.nature === "1")
+    .reduce((val, arr) => (arr += parseFloat(val.value)), 0);
+  console.log("Income Value", incomeValue);
   expenseValue = transactions
-    .filter((val) => val?.nature === "0")
-    .reduce((acc, cv) => (acc += parseFloat(cv.value)), 0);
-  profitValue = incomeValue - expenseValue;
-  incomeSpan.innerText = incomeValue;
-  expenseSpan.innerText = expenseValue;
-  profitSpan.innerText = profitValue;
-}
-
-function setLocalStorage() {
-  localStorage.setItem("transactions", JSON.stringify(transactions));
-}
-function getLocalStorage() {
-  transactions = JSON.parse(localStorage.getItem("transactions"));
-  if(transactions ===null){
-    transactions =[];
-  }
-  console.log(transactions);
+    .filter((val) => val.nature === "0")
+    .reduce((val, arr) => (arr += parseFloat(val.value)), 0);
+  console.log("expense value", expenseValue);
 }
 
 // button and view list
 let btnAdd = document.getElementById("btn-add");
-let btnReset = document.getElementById("btn-reset");
 let viewList = document.getElementById("view-list");
 
 // span list of income,expense and profit mention the total value of each span
@@ -55,9 +41,6 @@ let expenseSpan = document.getElementById("expense-value");
 let profitSpan = document.getElementById("profit-value");
 
 let updateStatus = false;
-let ExistingDataId = 0;
-let ExistingDataIndex = null;
-let currentId = transactions[transactions.length-1]; 
 
 incomeSpan.innerText = incomeValue;
 expenseSpan.innerText = expenseValue;
@@ -108,11 +91,10 @@ expense.addEventListener("click", () => {
   all.removeAttribute("checked");
   filterData(0);
 });
-// ===============================================================
 
-// Validation for the Input Elements
+// create
 btnAddMsg.classList.remove("shown");
-
+// Validation for the Input Elements
 tranactionName.addEventListener("blur", function () {
   CheckValue(
     tranactionName.value,
@@ -133,7 +115,6 @@ amount.addEventListener("blur", function () {
 description.addEventListener("blur", function () {
   CheckValue(description.value, decsNameMsg, "Please Enter the Desc");
 });
-// ============================================================
 
 // Create Transaction of any one it may Income or Expense
 btnAdd.addEventListener("click", () => {
@@ -142,16 +123,15 @@ btnAdd.addEventListener("click", () => {
   let value = amount.value;
   let desc = description.value;
   if (transName === "" || nature === "" || value === "" || desc === "") {
-    setTimeout(() => {
+    setInterval(() => {
       btnAddMsg.classList.remove("shown");
       btnAddMsg.innerText = "";
     }, 1500);
-    btnAddMsg.classList.add("shown", "notify");
+    btnAddMsg.classList.add("shown","notify");
     btnAddMsg.innerText = "Please Fill all details";
   } else {
-    console.log("Transaction Id gen",transactions)
     let transaction = {
-      id:parseInt(updateStatus?ExistingDataId:(transactions?.length===0?0:(transactions?.length))+1),
+      id: transactions[transactions?.length - 1]?.id + 1 || 1,
       date: Date.now(),
       transName,
       nature,
@@ -165,12 +145,6 @@ btnAdd.addEventListener("click", () => {
     clearData();
   }
 });
-
-btnReset.addEventListener("click",function(){
-  alert("working");
-  clearData();
-})
-
 // General validation
 function CheckValue(val, varName, msg) {
   if (val === "") {
@@ -184,75 +158,64 @@ function CheckValue(val, varName, msg) {
 function checkData(obj) {
   console.log("check obj", obj);
 
-  if(!obj) throw new Error("No data add");
-  if (!updateStatus) {
+  let selectedData = transactions.findIndex(
+    (trans) => trans.transName === obj.transName
+  );
+  console.log("seletededData", selectedData);
+  if (selectedData < 0) {
     addNewTrans(obj);
   } else {
     // alert("is there",selectedData)
-    updateTrans(ExistingDataIndex, obj, updateStatus);
+    updateTrans(selectedData, obj, updateStatus);
   }
   console.log(transactions);
 }
 function addNewTrans(newObj) {
   transactions.push(newObj);
-  setLocalStorage();
-  console.log("add new", transactions);
+  console.log(transactions);
   fetchData();
 }
 function updateTrans(index, obj, update) {
-  console.log("update",index,obj,update)
   const oldObj = transactions[index];
   const newObj = obj;
   if (update) {
-    transactions[index] = {...newObj};
-    console.log("updaated true",transactions[index])
-    setLocalStorage();
+    transactions[index] = newObj;
     updateStatus = false;
-    ExistingDataId =0;
-    ExistingDataIndex =null;
   } else {
-  //   if (oldObj.nature === newObj.nature) {
-  //     updateValue = parseFloat(oldObj.value) + parseFloat(newObj.value);
-  //     transactions[index] = { ...transactions[index], value: updateValue };
-  //   } else {
-  //     updateValue = parseFloat(oldObj.value) - parseFloat(newObj.value);
-  //     if (updateValue < 0) {
-  //       transactions[index] = {
-  //         ...transactions[index],
-  //         nature: newObj.nature,
-  //         value: updateValue / -1,
-  //       };
-  //     } else {
-  //       transactions[index] = { ...transactions[index], value: updateValue };
-  //     }
-  //   }
-  // }
-  console.log("updated False")
-}
+    if (oldObj.nature === newObj.nature) {
+      updateValue = parseFloat(oldObj.value) + parseFloat(newObj.value);
+      transactions[index] = { ...transactions[index], value: updateValue };
+    } else {
+      updateValue = parseFloat(oldObj.value) - parseFloat(newObj.value);
+      if (updateValue < 0) {
+        transactions[index] = {
+          ...transactions[index],
+          nature: newObj.nature,
+          value: updateValue / -1,
+        };
+      } else {
+        transactions[index] = { ...transactions[index], value: updateValue };
+      }
+    }
+  }
   fetchData();
 }
 // view
 function fetchData() {
   viewList.innerHTML = "";
-  getLocalStorage();
-  transactions?.forEach((val, index) => {
+  transactions.forEach((val, index) => {
     renderListValue(val, index);
     calculation();
   });
-  // setLocalStorage();
 }
 fetchData();
 
 function renderListValue(obj, index) {
-  let listContent = document.createElement("tr");
-  listContent.classList.add("row-data", `row-${obj?.id}`);
-  listContent.id = obj?.id;
-  listContent.setAttribute("data-action", "view");
-  listContent.setAttribute("data-id", `${obj?.id}`);
+  let listContent = document.createElement("li");
   const indexValue = index + 1 || 1;
   let nature = "";
   let valMark = "";
-  if (obj?.nature === "0") {
+  if (obj.nature === "0") {
     nature = "Expense";
     valMark = "red";
   } else {
@@ -260,53 +223,34 @@ function renderListValue(obj, index) {
     valMark = "green";
   }
   listContent.innerHTML = `
-            <td>${indexValue}</td>
-            <td>${obj?.transName}</td>
-            <td>${nature}</td>
-            <td class="desc" title="${obj?.desc}">${obj?.desc}</td>
-            <td class=${valMark}>Rs.${obj?.value}</td>
-            <td class="action-list-area">
-            <span class="action-list"> 
-            <button type="button" class="btn-edit action-btn" data-action="edit" data-id="${obj?.id}">Edit</button>
-            <button type="button" class="btn-delete action-btn" data-action="delete" data-id="${obj?.id}">Delete</button>
-            </span>
-            </td>
+            <li>
+            <div class="list-content">
+            <div class="list-main-content">
+            <span>${indexValue}</span>
+            <strong>${obj?.transName}</strong>
+            <span>${nature}</span>
+            <span>${obj?.desc}</span>
+            <span class=${valMark}>Rs.${obj.value}</span>
+            </div>
+            <div>
+            <button class="btn-edit btn" onClick="editTransaction(${obj.id})">Edit</button>
+            <button class="btn-delete btn" onClick="deleteTransaction(${obj.id})">Delete</button>
+            </div>
+            </div>
+            </li>
             `;
   viewList.appendChild(listContent);
 }
-viewList.addEventListener("click", handleRowAction);
-
-function handleRowAction(event) {
-  let target = event.target;
-  const action = target.dataset.action;
-  const rowId = target.dataset.id;
-  console.log("actionClicked", action, rowId);
-  if (action === "edit") {
-    editTransaction(rowId);
-  } else if (action === "delete") {
-    deleteTransaction(rowId);
-  } else if (action === "view") {
-    viewTransition(rowId);
-  }
-}
-// view
-function viewTransition(id) {
-  console.log("Row Id", id);
-}
 // Edit
 function editTransaction(id) {
-  selectingData = transactions.findIndex((val) => val.id === parseInt(id));
-  ExistingDataIndex = selectingData
-  console.log("edited", selectingData);
-  ExistingDataId = id;
+  selectingData = transactions.findIndex((val) => val.id === id);
   updating(selectingData);
   fetchData();
 }
 
 // Delete
 function deleteTransaction(id) {
-  transactions = transactions.filter((val) => val.id != parseInt(id));
-  setLocalStorage();
+  transactions = transactions.filter((val) => val.id != id);
   fetchData();
 }
 
@@ -324,7 +268,7 @@ function updating(index) {
     (description.value = transactions[index].desc);
   updateStatus = true;
 }
-// filter
+
 function filterData(filter) {
   viewList.innerHTML = "";
   if (filter === 1) {
@@ -353,18 +297,5 @@ function filterData(filter) {
     } else {
       viewList.innerHTML = "";
     }
-  }
-}
-// Generate Id
-
-function generatedId(status){
-  if(status){
-    let createId = currentId;
-    currentId++;
-    return createId;
-  }else{
-    let id = transactions[transactions.length-1].id
-    console.log("current Id ",id);
-    return id;
   }
 }
